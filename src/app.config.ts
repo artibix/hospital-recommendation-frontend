@@ -1,41 +1,39 @@
-export default {
+// src/app.config.ts
+export default ({
   pages: [
     'pages/index/index',
-    'pages/nodes/nodes',
-    'pages/hot/hot',
-    'pages/node_detail/node_detail',
-    'pages/thread_detail/thread_detail',
+    'pages/assistant/index',
+    // 'pages/profile/index'
   ],
   tabBar: {
+    color: '#666666',
+    selectedColor: '#2B87FF',
+    backgroundColor: '#ffffff',
     list: [
       {
-        iconPath: 'resource/latest.png',
-        selectedIconPath: 'resource/lastest_on.png',
         pagePath: 'pages/index/index',
-        text: '最新',
+        text: '首页',
+        iconPath: '/assets/img/my-off.png',
+        selectedIconPath: '/assets/img/my-off.png'
       },
       {
-        iconPath: 'resource/hotest.png',
-        selectedIconPath: 'resource/hotest_on.png',
-        pagePath: 'pages/hot/hot',
-        text: '热门',
+        pagePath: 'pages/assistant/index',
+        text: '智能助手',
+        iconPath: '/assets/img/my-off.png',
+        selectedIconPath: '/assets/img/my-off.png'
       },
-      {
-        iconPath: 'resource/node.png',
-        selectedIconPath: 'resource/node_on.png',
-        pagePath: 'pages/nodes/nodes',
-        text: '节点',
-      },
-    ],
-    color: '#000',
-    selectedColor: '#56abe4',
-    backgroundColor: '#fff',
-    borderStyle: 'white',
+      // {
+      //   pagePath: 'pages/profile/index',
+      //   text: '我的',
+      //   iconPath: '/assets/img/my-off.png',
+      //   selectedIconPath: '/assets/img/my-off.png'
+      // }
+    ]
   },
   window: {
     backgroundTextStyle: 'light',
     navigationBarBackgroundColor: '#fff',
-    navigationBarTitleText: 'V2EX',
-    navigationBarTextStyle: 'black',
-  },
-}
+    navigationBarTitleText: '智能医院导航',
+    navigationBarTextStyle: 'black'
+  }
+})

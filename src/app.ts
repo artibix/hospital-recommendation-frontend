@@ -1,23 +1,14 @@
-import Vuex from 'vuex'
-import './app.css'
+import { createApp } from 'vue'
+import './app.styl'
+import store from './store'
+import { Searchbar } from '@nutui/nutui-taro'
+import { Elevator } from '@nutui/nutui-taro'
 
-const store = new Vuex.Store({
-  state: {
-    thread: {},
-  },
-  mutations: {
-    setThread: (thread: any) => {
-      state.thread = { ...thread }
-    },
-  },
+const App = createApp({
+  onShow () {},
+  // 入口组件不需要实现 render 方法，即使实现了也会被 taro 所覆盖
 })
-
-const App = {
-  store,
-  render(h: (arg0: string, arg1: any) => any) {
-    // this.$slots.default 是将要会渲染的页面
-    return h('block', this.$slots.default)
-  },
-}
-
+App.use(store)
+App.use(Searchbar)
+App.use(Elevator)
 export default App

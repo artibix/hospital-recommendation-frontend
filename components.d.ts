@@ -7,8 +7,15 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
-    Thread: typeof import('./src/components/thread.vue')['default']
-    Thread_detail: typeof import('./src/components/thread_detail.vue')['default']
-    Thread_list: typeof import('./src/components/thread_list.vue')['default']
+    HospitalCard: typeof import('./src/components/hospital/HospitalCard.vue')['default']
+    NutButton: typeof import('@nutui/nutui-taro')['Button']
+    NutElevator: typeof import('@nutui/nutui-taro')['Elevator']
+    NutEmpty: typeof import('@nutui/nutui-taro')['Empty']
+    NutIcon: typeof import('@nutui/nutui-taro')['Icon']
+    NutPopup: typeof import('@nutui/nutui-taro')['Popup']
+    NutRate: typeof import('@nutui/nutui-taro')['Rate']
+    NutSearchbar: typeof import('@nutui/nutui-taro')['Searchbar']
+    NutSkeleton: typeof import('@nutui/nutui-taro')['Skeleton']
+    SearchBar: typeof import('./src/components/base/SearchBar.vue')['default']
   }
 }
