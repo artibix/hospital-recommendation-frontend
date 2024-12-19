@@ -11,4 +11,5 @@ const App = createApp({
 App.use(store)
 App.use(Searchbar)
 App.use(Elevator)
+
 export default App

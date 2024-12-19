@@ -11,11 +11,12 @@ declare module 'vue' {
     NutButton: typeof import('@nutui/nutui-taro')['Button']
     NutElevator: typeof import('@nutui/nutui-taro')['Elevator']
     NutEmpty: typeof import('@nutui/nutui-taro')['Empty']
+    NutGrid: typeof import('@nutui/nutui-taro')['Grid']
+    NutGridItem: typeof import('@nutui/nutui-taro')['GridItem']
     NutIcon: typeof import('@nutui/nutui-taro')['Icon']
     NutPopup: typeof import('@nutui/nutui-taro')['Popup']
     NutRate: typeof import('@nutui/nutui-taro')['Rate']
     NutSearchbar: typeof import('@nutui/nutui-taro')['Searchbar']
-    NutSkeleton: typeof import('@nutui/nutui-taro')['Skeleton']
     SearchBar: typeof import('./src/components/base/SearchBar.vue')['default']
   }
 }

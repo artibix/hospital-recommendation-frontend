@@ -8,17 +8,22 @@
       </view>
       <view class="hospital-details">
         <view class="rating-distance">
-          <nut-rate v-if="hospital.rating" v-model="hospital.rating" readonly />
-          <text class="distance" v-if="hospital.distance">{{ hospital.distance }}km</text>
+          <nut-rate
+              v-if="hospital.rating"
+              v-model="hospital.rating"
+              readonly
+              :size="16"
+              active-color="#FFB800"
+          />
+          <view class="distance-wrapper" v-if="hospital.distance">
+            <Location size="16" class="distance-icon" />
+            <text class="distance">{{ hospital.distance }}km</text>
+          </view>
         </view>
-        <nut-button
-            class="navigate-btn"
-            type="primary"
-            size="small"
-            @click="handleNavigate"
-        >
-          导航
-        </nut-button>
+        <view class="navigate-button" @click="handleNavigate">
+          <Location size="24" class="navigate-icon"/>
+          <text class="navigate-text">导航</text>
+        </view>
       </view>
     </view>
   </view>
@@ -27,6 +32,7 @@
 <script lang="ts" setup>
 import { Hospital } from '@/api/types';
 import Taro from '@tarojs/taro';
+import { Location } from '@nutui/icons-vue-taro';
 
 const props = defineProps<{
   hospital: Hospital;
@@ -35,7 +41,8 @@ const props = defineProps<{
 const handleNavigate = () => {
   Taro.showToast({
     title: '导航功能开发中',
-    icon: 'none'
+    icon: 'none',
+    duration: 2000
   });
 };
 </script>
@@ -43,30 +50,38 @@ const handleNavigate = () => {
 <style lang="scss">
 .hospital-card {
   background: #fff;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease;
+
+  &:active {
+    transform: scale(0.98);
+  }
 
   .hospital-info {
     .hospital-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
 
       .hospital-name {
-        font-size: 16px;
-        font-weight: 500;
+        font-size: 28px;
+        font-weight: 600;
         color: #333;
+        flex: 1;
+        margin-right: 12px;
       }
 
       .hospital-level {
-        font-size: 14px;
+        font-size: 24px;
         color: #2B87FF;
-        padding: 4px 8px;
+        padding: 6px 12px;
         background: rgba(43, 135, 255, 0.1);
-        border-radius: 4px;
+        border-radius: 8px;
+        white-space: nowrap;
       }
     }
 
@@ -74,20 +89,87 @@ const handleNavigate = () => {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-top: 16px;
 
       .rating-distance {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 16px;
 
-        .distance {
-          font-size: 14px;
-          color: #666;
+        :deep(.nut-rate) {
+          .nut-rate-item {
+            margin-right: 4px;
+          }
+        }
+
+        .distance-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+
+          .distance-icon {
+            color: #666;
+          }
+
+          .distance {
+            font-size: 24px;
+            color: #666;
+          }
         }
       }
 
-      .navigate-btn {
-        padding: 4px 12px;
+      .navigate-button {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 16px;
+        background: rgba(43, 135, 255, 0.1);
+        border-radius: 24px;
+        transition: background-color 0.2s ease;
+
+        &:active {
+          background: rgba(43, 135, 255, 0.2);
+        }
+
+        .navigate-icon {
+          color: #2B87FF;
+        }
+
+        .navigate-text {
+          font-size: 24px;
+          color: #2B87FF;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .hospital-card {
+    background: #2a2a2a;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    .hospital-info {
+      .hospital-header {
+        .hospital-name {
+          color: #fff;
+        }
+      }
+
+      .hospital-details {
+        .rating-distance {
+          .distance-wrapper {
+            .distance-icon {
+              color: #999;
+            }
+
+            .distance {
+              color: #999;
+            }
+          }
+        }
       }
     }
   }
