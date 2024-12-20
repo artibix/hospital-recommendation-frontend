@@ -7,6 +7,15 @@ export interface Hospital {
     longitude: number;
     rating?: number;
     distance?: number;
+    tags?: string[];
+    description: string;
+    workingHours: string
+}
+
+export interface HospitalCategory {
+    id: string;
+    name: string;
+    hospitals: Hospital[];
 }
 
 export interface SearchParams {

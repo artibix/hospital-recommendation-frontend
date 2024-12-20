@@ -15,6 +15,7 @@ interface ResponseData<T = any> {
 
 class RequestError extends Error {
     code: number
+
     constructor(message: string, code: number) {
         super(message)
         this.code = code
@@ -48,7 +49,7 @@ export async function request<T>({
         if (response.statusCode === 401) {
             // Handle unauthorized access
             Taro.removeStorageSync('token')
-            Taro.navigateTo({ url: '/pages/login/index' })
+            Taro.navigateTo({url: '/pages/login/index'})
             throw new RequestError('Unauthorized access', 401)
         }
 

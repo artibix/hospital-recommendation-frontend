@@ -3,6 +3,9 @@ export default ({
   pages: [
     'pages/index/index',
     'pages/assistant/index',
+    'pages/hospital/list',
+    'pages/hospital/favorites',
+    'pages/hospital/detail'
     // 'pages/profile/index'
   ],
   tabBar: {

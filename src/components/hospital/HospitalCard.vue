@@ -1,13 +1,25 @@
 // src/components/hospital/HospitalCard.vue
 <template>
-  <view class="hospital-card">
+  <view class="hospital-card" @click="onCardClick">
     <view class="hospital-info">
+      <!-- 医院基本信息 -->
       <view class="hospital-header">
         <text class="hospital-name">{{ hospital.name }}</text>
         <text class="hospital-level">{{ hospital.level }}</text>
       </view>
+
+      <!-- 医院标签 -->
+      <view class="hospital-tags" v-if="hospital.tags && hospital.tags.length > 0">
+        <text
+            v-for="tag in hospital.tags"
+            :key="tag"
+            class="tag"
+        >{{ tag }}</text>
+      </view>
+
+      <!-- 评分和距离信息 -->
       <view class="hospital-details">
-        <view class="rating-distance">
+        <view class="rating-info">
           <nut-rate
               v-if="hospital.rating"
               v-model="hospital.rating"
@@ -15,14 +27,25 @@
               :size="16"
               active-color="#FFB800"
           />
+          <text class="rating-text" v-if="hospital.rating">
+            {{ hospital.rating }}分
+          </text>
           <view class="distance-wrapper" v-if="hospital.distance">
             <Location size="16" class="distance-icon" />
             <text class="distance">{{ hospital.distance }}km</text>
           </view>
         </view>
-        <view class="navigate-button" @click="handleNavigate">
-          <Location size="24" class="navigate-icon"/>
-          <text class="navigate-text">导航</text>
+
+        <!-- 操作按钮区 -->
+        <view class="actions">
+          <view class="action-button favorite" @click.stop="handleFavorite">
+            <Star :fill="isFavorite" class="action-icon" />
+            <text class="action-text">{{ isFavorite ? '已收藏' : '收藏' }}</text>
+          </view>
+          <view class="action-button navigate" @click.stop="handleNavigate">
+            <Location class="action-icon" />
+            <text class="action-text">导航</text>
+          </view>
         </view>
       </view>
     </view>
@@ -30,19 +53,52 @@
 </template>
 
 <script lang="ts" setup>
+import { computed } from 'vue';
 import { Hospital } from '@/api/types';
 import Taro from '@tarojs/taro';
-import { Location } from '@nutui/icons-vue-taro';
+import { Location, Star } from '@nutui/icons-vue-taro';
 
 const props = defineProps<{
   hospital: Hospital;
+  isFavorite?: boolean;
 }>();
 
-const handleNavigate = () => {
+const emit = defineEmits(['click', 'favorite', 'navigate']);
+
+const isFavorite = computed(() => props.isFavorite || false);
+
+const onCardClick = () => {
+  emit('click', props.hospital);
+  Taro.navigateTo({
+    url: `/pages/hospital/detail?id=${props.hospital.id}`
+  });
+};
+
+const handleFavorite = () => {
+  emit('favorite', props.hospital);
   Taro.showToast({
-    title: '导航功能开发中',
-    icon: 'none',
+    title: isFavorite.value ? '已取消收藏' : '已添加收藏',
+    icon: 'success',
     duration: 2000
+  });
+};
+
+const handleNavigate = () => {
+  emit('navigate', props.hospital);
+  const hospital = props.hospital;
+  if (!hospital.latitude || !hospital.longitude) {
+    Taro.showToast({
+      title: '无法获取医院位置信息',
+      icon: 'none'
+    });
+    return;
+  }
+
+  Taro.openLocation({
+    latitude: hospital.latitude,
+    longitude: hospital.longitude,
+    name: hospital.name,
+    address: hospital.address
   });
 };
 </script>
@@ -85,21 +141,34 @@ const handleNavigate = () => {
       }
     }
 
+    .hospital-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+
+      .tag {
+        font-size: 24px;
+        color: #666;
+        padding: 4px 12px;
+        background: #f5f5f5;
+        border-radius: 6px;
+      }
+    }
+
     .hospital-details {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 16px;
+      flex-direction: column;
+      gap: 16px;
 
-      .rating-distance {
+      .rating-info {
         display: flex;
         align-items: center;
         gap: 16px;
 
-        :deep(.nut-rate) {
-          .nut-rate-item {
-            margin-right: 4px;
-          }
+        .rating-text {
+          font-size: 24px;
+          color: #666;
         }
 
         .distance-wrapper {
@@ -118,34 +187,58 @@ const handleNavigate = () => {
         }
       }
 
-      .navigate-button {
+      .actions {
         display: flex;
-        align-items: center;
-        gap: 4px;
-        padding: 8px 16px;
-        background: rgba(43, 135, 255, 0.1);
-        border-radius: 24px;
-        transition: background-color 0.2s ease;
+        justify-content: flex-end;
+        gap: 12px;
 
-        &:active {
-          background: rgba(43, 135, 255, 0.2);
-        }
+        .action-button {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 8px 16px;
+          border-radius: 24px;
+          transition: all 0.2s ease;
 
-        .navigate-icon {
-          color: #2B87FF;
-        }
+          .action-icon {
+            font-size: 24px;
+          }
 
-        .navigate-text {
-          font-size: 24px;
-          color: #2B87FF;
-          font-weight: 500;
+          .action-text {
+            font-size: 24px;
+            font-weight: 500;
+          }
+
+          &.favorite {
+            background: rgba(255, 77, 79, 0.1);
+
+            .action-icon, .action-text {
+              color: #ff4d4f;
+            }
+
+            &:active {
+              background: rgba(255, 77, 79, 0.2);
+            }
+          }
+
+          &.navigate {
+            background: rgba(43, 135, 255, 0.1);
+
+            .action-icon, .action-text {
+              color: #2B87FF;
+            }
+
+            &:active {
+              background: rgba(43, 135, 255, 0.2);
+            }
+          }
         }
       }
     }
   }
 }
 
-// Dark mode support
+// 暗黑模式支持
 @media (prefers-color-scheme: dark) {
   .hospital-card {
     background: #2a2a2a;
@@ -158,13 +251,18 @@ const handleNavigate = () => {
         }
       }
 
-      .hospital-details {
-        .rating-distance {
-          .distance-wrapper {
-            .distance-icon {
-              color: #999;
-            }
+      .hospital-tags {
+        .tag {
+          background: #333;
+          color: #999;
+        }
+      }
 
+      .hospital-details {
+        .rating-info {
+          .rating-text,
+          .distance-wrapper {
+            .distance-icon,
             .distance {
               color: #999;
             }

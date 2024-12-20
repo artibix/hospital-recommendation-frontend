@@ -14,9 +14,10 @@ declare module 'vue' {
     NutGrid: typeof import('@nutui/nutui-taro')['Grid']
     NutGridItem: typeof import('@nutui/nutui-taro')['GridItem']
     NutIcon: typeof import('@nutui/nutui-taro')['Icon']
-    NutPopup: typeof import('@nutui/nutui-taro')['Popup']
     NutRate: typeof import('@nutui/nutui-taro')['Rate']
     NutSearchbar: typeof import('@nutui/nutui-taro')['Searchbar']
+    NutTabPane: typeof import('@nutui/nutui-taro')['TabPane']
+    NutTabs: typeof import('@nutui/nutui-taro')['Tabs']
     SearchBar: typeof import('./src/components/base/SearchBar.vue')['default']
   }
 }

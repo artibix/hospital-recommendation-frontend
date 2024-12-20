@@ -1,343 +1,236 @@
-// src/pages/index/index.vue
+//src/pages/index/index.vue
 <template>
   <view class="index-container">
-    <!-- Search Component -->
-    <SearchBar @select="handleHospitalSelection" />
+    <!-- 搜索栏 -->
+    <SearchBar @select="handleHospitalSelect" />
 
-    <!-- Feature Grid -->
+    <!-- 功能区域 -->
+    <view class="function-area">
+      <nut-grid :column-num="2">
+        <nut-grid-item
+            text="医院列表"
+            @click="goToHospitalList"
+            class="hospital-list-item"
+        >
+          <Category class="grid-icon" />
+        </nut-grid-item>
 
-    <nut-grid class="feature-grid" :column-num="2">
-      <nut-grid-item
-          text="医院列表"
-          @click="showHospitalList"
-          class="hospital-list-item"
-      >
-        <Category class="grid-icon" />
-      </nut-grid-item>
+        <nut-grid-item
+            text="我的收藏"
+            @click="goToFavorites"
+            class="favorites-item"
+        >
+          <Heart class="grid-icon" />
+        </nut-grid-item>
+      </nut-grid>
+    </view>
 
-      <nut-grid-item
-          text="我的收藏"
-          @click="showFavorites"
-          class="favorites-item"
-      >
-        <Heart class="grid-icon" />
-      </nut-grid-item>
-    </nut-grid>
-
-    <!-- Hospital List Popup -->
-    <nut-popup
-        v-model:visible="showHospitalPopup"
-        position="bottom"
-        :style="{ height: '70%' }"
-        class="custom-popup"
-    >
-      <view class="popup-header">
-        <text class="popup-title">医院列表</text>
-        <nut-icon name="close" size="20" @click="showHospitalPopup = false" />
-      </view>
-      <nut-elevator
-          :index-list="hospitalList"
-          :height="500"
-          @click-item="handleHospitalSelect"
-          accept-key="testTitle"
-          class="custom-elevator"
-      />
-    </nut-popup>
-
-    <!-- Favorites Popup -->
-    <nut-popup
-        v-model:visible="showFavoritePopup"
-        position="bottom"
-        :style="{ height: '70%' }"
-        class="custom-popup"
-    >
-      <view class="popup-header">
-        <text class="popup-title">我的收藏</text>
-        <nut-icon name="close" size="20" @click="showFavoritePopup = false" />
-      </view>
-      <nut-elevator
-          :index-list="favoriteList"
-          :height="500"
-          @click-item="handleHospitalSelect"
-          accept-key="testTitle"
-          class="custom-elevator"
-      />
-    </nut-popup>
-
-    <!-- Nearby Hospitals -->
-    <view class="nearby-hospitals">
+    <!-- 附近医院 -->
+    <view class="nearby-section">
       <view class="section-header">
         <text class="section-title">附近医院</text>
-        <nut-icon name="location" size="20" color="#2B87FF" />
+        <text class="section-subtitle">根据您的位置为您推荐</text>
       </view>
+
       <view class="hospital-list">
         <hospital-card
             v-for="hospital in nearbyHospitals"
             :key="hospital.id"
             :hospital="hospital"
+            :is-favorite="isHospitalFavorite(hospital.id)"
         />
+
+        <view v-if="nearbyHospitals.length > 3" class="view-more" @click="goToHospitalList">
+          <text class="view-more-text">查看更多医院</text>
+          <nut-icon name="right" size="16" />
+        </view>
       </view>
     </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import {onMounted, ref} from 'vue';
-import {getFavoriteHospitals, getNearbyHospitals} from '@/api/hospital';
-import type {Hospital} from '@/api/types';
-import HospitalCard from '@/components/hospital/HospitalCard.vue';
-import SearchBar from '@/components/base/SearchBar.vue';
+import { ref, onMounted } from 'vue';
 import { Category, Heart } from '@nutui/icons-vue-taro';
-import Taro from "@tarojs/taro";
+import { getNearbyHospitals } from '@/api/hospital';
+import type { Hospital } from '@/api/types';
+import Taro from '@tarojs/taro';
+import SearchBar from '@/components/base/SearchBar.vue';
+import HospitalCard from '@/components/hospital/HospitalCard.vue';
 
-// 状态管理
-const showHospitalPopup = ref(false);
-const showFavoritePopup = ref(false);
+// 状态定义
 const nearbyHospitals = ref<Hospital[]>([]);
-const hospitalList = ref([
-  {
-    testTitle: '全部医院',
-    list: []  // Initialize with empty list
-  }
-]);
+const favoriteIds = ref<string[]>(['1', '3']); // 示例收藏ID
 
-const favoriteList = ref([
-  {
-    testTitle: '收藏的医院',
-    list: []  // Initialize with empty list
-  }
-]);
-const handleHospitalSelection = (hospital: Hospital) => {
-  // Handle the selected hospital, e.g., navigate to detail page
-  console.log('Selected hospital:', hospital);
+// 页面跳转函数
+const goToHospitalList = () => {
+  Taro.navigateTo({ url: '/pages/hospital/list' });
 };
-// 获取附近医院
+
+const goToFavorites = () => {
+  Taro.navigateTo({ url: '/pages/hospital/favorites' });
+};
+
+const isHospitalFavorite = (hospitalId: string) => {
+  return favoriteIds.value.includes(hospitalId);
+};
+
+// 获取附近医院数据
 const fetchNearbyHospitals = async () => {
-  nearbyHospitals.value = await getNearbyHospitals({});
-};
-
-const prepareHospitalList = async () => {
-  const hospitals = await getNearbyHospitals({});
-  hospitalList.value[0].list = hospitals.map(h => ({
-    name: h.name,
-    id: h.id,
-    level: h.level
-  }));
-};
-
-const prepareFavoriteList = async () => {
-  const favorites = await getFavoriteHospitals();
-  favoriteList.value[0].list = favorites.map(h => ({
-    name: h.name,
-    id: h.id,
-    level: h.level
-  }));
-};
-
-const showHospitalList = () => {
-  showHospitalPopup.value = true;
-};
-
-const showFavorites = () => {
-  showFavoritePopup.value = true;
-};
-
-const handleHospitalSelect = (key: string, item: any) => {
-  console.log('Selected hospital:', item);
-  showHospitalPopup.value = false;
-  showFavoritePopup.value = false;
+  try {
+    const hospitals = await getNearbyHospitals({});
+    // 只显示前3个医院
+    nearbyHospitals.value = hospitals.slice(0, 3);
+  } catch (error) {
+    console.error('获取附近医院失败:', error);
+    Taro.showToast({
+      title: '获取数据失败',
+      icon: 'error',
+      duration: 2000
+    });
+  }
 };
 
 // 初始化
 onMounted(() => {
   fetchNearbyHospitals();
-  prepareHospitalList();
-  prepareFavoriteList();
 });
-
 </script>
 
 <style lang="scss">
 .index-container {
-  padding: 20px 16px;
-  background-color: #F8F8F8;
   min-height: 100vh;
+  padding: 20px 16px;
+  background-color: #f8f8f8;
 
-  .feature-grid {
-    margin: 28px 0;
-    padding: 4px;
+  .function-area {
+    margin: 24px 0;
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 
     :deep(.nut-grid) {
-      padding: 12px;
-      background: transparent;
-    }
+      padding: 16px;
 
-    :deep(.nut-grid-item) {
-      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-      margin: 8px;
-      border-radius: 16px;
-      box-shadow: 0 4px 16px rgba(43, 135, 255, 0.08);
-      transition: all 0.3s ease;
-      overflow: hidden;
-      position: relative;
-
-      &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: #2B87FF;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      }
-
-      &:active {
-        transform: scale(0.98);
-        background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f5 100%);
-
-        &::before {
-          opacity: 1;
+      .nut-grid-item {
+        &::after {
+          display: none;
         }
-      }
 
-      .nut-grid-item__content {
-        padding: 28px 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
-      }
+        .nut-grid-item__content {
+          padding: 24px 16px;
+          border-radius: 12px;
+          transition: all 0.3s ease;
 
-      .grid-icon {
-        font-size: 36px;
-        color: #2B87FF;
-        background: rgba(43, 135, 255, 0.1);
-        padding: 12px;
-        border-radius: 12px;
-        transition: all 0.3s ease;
-      }
-
-      .nut-grid-item__text {
-        font-size: 28px;
-        color: #333;
-        font-weight: 500;
-        margin-top: 8px;
-      }
-
-      &.hospital-list-item {
-        background: linear-gradient(135deg, #ffffff 0%, #e8f4ff 100%);
+          &:active {
+            transform: scale(0.96);
+          }
+        }
 
         .grid-icon {
-          background: rgba(43, 135, 255, 0.15);
+          font-size: 36px;
+          margin-bottom: 12px;
         }
-      }
 
-      &.favorites-item {
-        background: linear-gradient(135deg, #ffffff 0%, #fff1f0 100%);
+        .nut-grid-item__text {
+          font-size: 28px;
+          font-weight: 500;
+          color: #333;
+        }
 
-        .grid-icon {
-          color: #ff4d4f;
-          background: rgba(255, 77, 79, 0.15);
+        &.hospital-list-item {
+          .grid-icon {
+            color: #2B87FF;
+          }
+        }
+
+        &.favorites-item {
+          .grid-icon {
+            color: #ff4d4f;
+          }
         }
       }
     }
   }
 
-  .nearby-hospitals {
-    margin-top: 24px;
+  .nearby-section {
+    margin-top: 32px;
 
     .section-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
       margin-bottom: 20px;
 
       .section-title {
-        font-size: 20px;
+        font-size: 32px;
         font-weight: 600;
         color: #333;
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .section-subtitle {
+        font-size: 24px;
+        color: #666;
       }
     }
 
     .hospital-list {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-  }
-}
+      .view-more {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background: #fff;
+        border-radius: 12px;
+        margin-top: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        cursor: pointer;
 
-.custom-popup {
-  :deep(.nut-popup) {
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
-
-    .popup-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 20px;
-      border-bottom: 1px solid #f5f5f5;
-
-      .popup-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: #333;
-      }
-    }
-
-    .custom-elevator {
-      padding: 16px;
-
-      :deep(.nut-elevator__list) {
-        .nut-elevator__list__item {
-          font-size: 16px;
-          padding: 12px 16px;
-        }
-      }
-
-      :deep(.nut-elevator__index) {
-        .nut-elevator__index__item {
-          font-size: 14px;
+        .view-more-text {
+          font-size: 28px;
           color: #2B87FF;
+          margin-right: 8px;
+        }
+
+        &:active {
+          opacity: 0.8;
         }
       }
     }
   }
 }
 
-// Dark mode support
+// 暗黑模式支持
 @media (prefers-color-scheme: dark) {
   .index-container {
-    background-color: #1a1a1a;
+    background: #1a1a1a;
 
-    .feature-grid .grid-item {
+    .function-area {
       background: #2a2a2a;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 
-      .grid-text {
-        color: #fff;
+      :deep(.nut-grid) {
+        .nut-grid-item {
+          .nut-grid-item__text {
+            color: #fff;
+          }
+        }
       }
     }
 
-    .nearby-hospitals {
-      .section-header .section-title {
-        color: #fff;
-      }
-    }
-  }
-
-  .custom-popup {
-    :deep(.nut-popup) {
-      background: #2a2a2a;
-
-      .popup-header {
-        border-bottom-color: #333;
-
-        .popup-title {
+    .nearby-section {
+      .section-header {
+        .section-title {
           color: #fff;
+        }
+        .section-subtitle {
+          color: #999;
+        }
+      }
+
+      .hospital-list {
+        .view-more {
+          background: #2a2a2a;
         }
       }
     }
