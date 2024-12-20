@@ -13,7 +13,7 @@
     "noUnusedParameters": true,
     "strictNullChecks": true,
     "sourceMap": true,
-    "baseUrl": ".",
+//    "baseUrl": ".",
     "rootDir": ".",
     "jsx": "preserve",
     "allowJs": true,
@@ -22,7 +22,7 @@
       "node_modules/@types"
     ],
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["./src", "./types", "components.d.ts"],
