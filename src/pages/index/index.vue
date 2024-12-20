@@ -2,7 +2,7 @@
 <template>
   <view class="index-container">
     <!-- 搜索栏 -->
-    <SearchBar @select="handleHospitalSelect" />
+    <SearchBar />
 
     <!-- 功能区域 -->
     <view class="function-area">

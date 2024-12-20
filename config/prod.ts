@@ -4,7 +4,7 @@ module.exports = {
   },
   copy: {
     patterns: [
-      { from: 'src/assets/', to: 'dist/assets/'}, // 指定需要 copy 的目录
+      { from: 'src/assets/', to: 'dist/assets/'},
     ],
   },
   defineConstants: {

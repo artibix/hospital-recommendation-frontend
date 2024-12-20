@@ -3,6 +3,13 @@ import './app.styl'
 import store from './store'
 import { Searchbar } from '@nutui/nutui-taro'
 import { Elevator } from '@nutui/nutui-taro'
+import { setMockMode } from '@/api/config'
+
+if (process.env.NODE_ENV === 'development') {
+  setMockMode(true)  // 开发环境使用mock
+} else {
+  setMockMode(false) // 生产环境使用真实接口
+}
 
 const App = createApp({
   onShow () {},
