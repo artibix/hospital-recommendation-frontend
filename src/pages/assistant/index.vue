@@ -286,7 +286,7 @@ onMounted(async () => {
   }
 
   .send-btn {
-    width: 180px;
+    width: 190px;
     height: 80px;
     border-radius: 16px;
     font-size: 28px;
