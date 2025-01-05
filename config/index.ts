@@ -45,7 +45,15 @@ const config = {
             taro: true
           })
         ]
-      }))
+      }));
+      chain.merge({
+        performance: {
+          //入口起点的最大体积，单位Byte
+          maxEntrypointSize: 1024000,
+          //生成文件的最大体积
+          maxAssetSize: 1024000,
+        },
+      });
     },
     postcss: {
       pxtransform: {
