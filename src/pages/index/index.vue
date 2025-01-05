@@ -53,10 +53,10 @@
 import { ref, onMounted } from 'vue';
 import { Category, Heart } from '@nutui/icons-vue-taro';
 import { getNearbyHospitals } from '@/api/hospital';
-import type { Hospital } from '@/api/types';
 import Taro from '@tarojs/taro';
 import SearchBar from '@/components/base/SearchBar.vue';
 import HospitalCard from '@/components/hospital/HospitalCard.vue';
+import {Hospital} from "@/types/models";
 
 // 状态定义
 const nearbyHospitals = ref<Hospital[]>([]);

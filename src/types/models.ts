@@ -13,22 +13,17 @@ export interface User {
 }
 
 export interface Hospital {
-    id: string
-    hospitalId: string
-    name: string
-    level?: string
-    address?: string
-    latitude: number
-    longitude: number
-    contactPhone?: string
-    description?: string
-    workingHours?: string
-    status: number
-    overallScore: number
-    createdAt: string
-    updatedAt: string
-    distance?: number
-    rating?: number
+    id: string;
+    name: string;
+    level: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+    rating?: number;
+    distance?: number;
+    tags?: string[];
+    description: string;
+    workingHours: string
 }
 
 export interface Department {
@@ -77,4 +72,12 @@ export interface RecommendationLog {
     score: number
     isClicked: boolean
     createdAt: string
+}
+
+export interface Message {
+    id: string;
+    type: 'user' | 'assistant';
+    content: string;
+    timestamp: number;
+    recommendations?: Hospital[];
 }

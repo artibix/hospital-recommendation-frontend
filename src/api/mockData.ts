@@ -1,5 +1,5 @@
-import {Hospital, HospitalCategory} from "@/api/types";
-import {Department} from "@/types/models";
+import {HospitalCategory} from "@/types/api";
+import {Department, Hospital, Message} from "@/types/models";
 
 export const mockHospitals: Hospital[] = [
     {
@@ -84,3 +84,13 @@ export const mockDepartments: Department[] = [
 ];
 
 export const mockFavorites: Hospital[] = [mockHospitals[0], mockHospitals[2]];
+
+
+export const mockMessages: Message[] = [
+    {
+        id: '1',
+        type: 'assistant',
+        content: '您好！我是您的智能医疗助手。请描述您的症状，我将为您推荐合适的医院。\n\n您可以这样描述：\n"我最近感觉胃部不适，经常出现胃痛和反酸..."',
+        timestamp: Date.now() - 1000
+    }
+];

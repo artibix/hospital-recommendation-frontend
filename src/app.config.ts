@@ -5,8 +5,8 @@ export default ({
     'pages/assistant/index',
     'pages/hospital/list',
     'pages/hospital/favorites',
-    'pages/hospital/detail'
-    // 'pages/profile/index'
+    'pages/hospital/detail',
+    'pages/profile/index'
   ],
   tabBar: {
     color: '#666666',
@@ -16,21 +16,21 @@ export default ({
       {
         pagePath: 'pages/index/index',
         text: '首页',
-        iconPath: '/assets/img/my-off.png',
-        selectedIconPath: '/assets/img/my-off.png'
+        iconPath: '/assets/img/home-gray.png',
+        selectedIconPath: '/assets/img/home-blue.png'
       },
       {
         pagePath: 'pages/assistant/index',
         text: '智能助手',
-        iconPath: '/assets/img/my-off.png',
-        selectedIconPath: '/assets/img/my-off.png'
+        iconPath: '/assets/img/assistant-gray.png',
+        selectedIconPath: '/assets/img/assistant-blue.png'
       },
-      // {
-      //   pagePath: 'pages/profile/index',
-      //   text: '我的',
-      //   iconPath: '/assets/img/my-off.png',
-      //   selectedIconPath: '/assets/img/my-off.png'
-      // }
+      {
+        pagePath: 'pages/profile/index',
+        text: '我的',
+        iconPath: '/assets/img/user-gray.png',
+        selectedIconPath: '/assets/img/user-blue.png'
+      }
     ]
   },
   window: {

@@ -1,5 +1,5 @@
-import { Hospital, SearchParams, HospitalCategory } from './types';
-import { Department } from "@/types/models";
+import {SearchParams, HospitalCategory } from '@/types/api';
+import {Department, Hospital} from "@/types/models";
 import { http } from '@/utils/request';
 import { config } from './config';
 import {

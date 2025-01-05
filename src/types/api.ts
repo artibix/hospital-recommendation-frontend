@@ -1,14 +1,16 @@
-// src/types/api.ts
 import {Hospital} from "@/types/models";
 
-export interface ResponseData<T> {
-    code: number
-    message: string
-    data: T
+export interface HospitalCategory {
+    id: string;
+    name: string;
+    hospitals: Hospital[];
 }
 
-export interface HospitalListResponse {
-    list: Hospital[]
-    total: number
-    hasMore: boolean
+export interface SearchParams {
+    keyword?: string;
+    lat?: number;
+    lng?: number;
+    radius?: number;
+    page?: number;
+    size?: number;
 }
