@@ -6,7 +6,8 @@ export default ({
     'pages/hospital/list',
     'pages/hospital/favorites',
     'pages/hospital/detail',
-    'pages/profile/index'
+    'pages/profile/index',
+    'pages/auth/login',
   ],
   tabBar: {
     color: '#666666',

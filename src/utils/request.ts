@@ -1,7 +1,7 @@
 import Taro from '@tarojs/taro'
 
 configureRequest({
-    baseURL: 'https://api.example.com',
+    baseURL: 'http://localhost:8000',
     timeout: 30000,
     tokenKey: 'auth_token',
     loginPath: '/pages/auth/login'
@@ -48,10 +48,10 @@ export class RequestError extends Error {
 
 // Default configuration
 const defaultConfig: RequestConfig = {
-    baseURL: '',
+    baseURL: 'http://localhost:8000',
     timeout: 60000,
     tokenKey: 'token',
-    loginPath: '/pages/login/index'
+    loginPath: '/pages/auth/login'
 }
 
 let globalConfig: RequestConfig = { ...defaultConfig }
@@ -90,7 +90,7 @@ function responseInterceptor(response: Taro.request.SuccessCallbackResult<Respon
     switch (statusCode) {
         case 401:
             Taro.removeStorageSync(globalConfig.tokenKey || 'token')
-            Taro.navigateTo({ url: globalConfig.loginPath || '/pages/login/index' })
+            Taro.navigateTo({ url: globalConfig.loginPath || '/pages/auth/login' })
             throw new RequestError('Unauthorized access', 401, data)
         case 403:
             throw new RequestError('Access forbidden', 403, data)

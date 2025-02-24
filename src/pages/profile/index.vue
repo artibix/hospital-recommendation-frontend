@@ -1,20 +1,19 @@
-//src/pages/profile/index.vue
 <template>
   <view class="profile-container">
     <!-- 用户信息卡片 -->
     <view class="user-card">
       <view class="avatar-section">
-        <image class="avatar" :src="userInfo.avatarUrl || defaultAvatar" mode="aspectFill"/>
-        <text class="nickname">{{ userInfo.nickname || '未登录' }}</text>
+        <image class="avatar" :src="currentUser?.avatar_url || defaultAvatar" mode="aspectFill"/>
+        <text class="nickname">{{ currentUser?.nickname || '未登录' }}</text>
       </view>
 
-      <nut-cell-group class="info-group">
-        <nut-cell title="手机号码" :desc="userInfo.phone || '未绑定'" @click="handleBindPhone">
-          <template #icon>
-            <Message class="cell-icon" />
-          </template>
-        </nut-cell>
-      </nut-cell-group>
+<!--      <nut-cell-group class="info-group">-->
+<!--        <nut-cell title="手机号码" :desc="currentUser?.phone || '未绑定'" @click="handleBindPhone">-->
+<!--          <template #icon>-->
+<!--            <Message class="cell-icon" />-->
+<!--          </template>-->
+<!--        </nut-cell>-->
+<!--      </nut-cell-group>-->
     </view>
 
     <!-- 功能列表 -->
@@ -39,14 +38,13 @@
     </nut-cell-group>
 
     <!-- 系统设置 -->
-    <nut-cell-group class="feature-group" title="设置">
-
-      <nut-cell title="关于我们" is-link @click="navigateTo('/pages/about/index')">
-        <template #icon>
-          <Service class="cell-icon" />
-        </template>
-      </nut-cell>
-    </nut-cell-group>
+<!--    <nut-cell-group class="feature-group" title="设置">-->
+<!--      <nut-cell title="关于我们" is-link @click="navigateTo('/pages/about/index')">-->
+<!--        <template #icon>-->
+<!--          <Service class="cell-icon" />-->
+<!--        </template>-->
+<!--      </nut-cell>-->
+<!--    </nut-cell-group>-->
 
     <!-- 登录/退出按钮 -->
     <view class="action-area">
@@ -55,34 +53,58 @@
           class="action-button"
           @click="handleLoginAction"
       >
-        {{ userInfo.id ? '退出登录' : '立即登录' }}
+        {{ isAuthenticated ? '退出登录' : '立即登录' }}
       </nut-button>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, onMounted } from 'vue';
 import Taro from '@tarojs/taro';
-import { Star, Message, Date, Comment, Notice, Setting, Service } from '@nutui/icons-vue-taro';
+import { useStore } from 'vuex';
+import { Star, Message, Date, Comment, Service } from '@nutui/icons-vue-taro';
 import defaultAvatar from '@/assets/img/avatar.png';
 
-// 用户信息
-const userInfo = ref({
-  id: '',
-  nickname: '未登录',
-  avatarUrl: '',
-  phone: ''
+// 使用 Vuex store
+const store = useStore();
+
+// 计算属性：获取当前用户
+const currentUser = computed(() => store.state.auth.user);
+// 计算属性：是否已认证
+const isAuthenticated = computed(() => store.state.auth.isAuthenticated);
+
+// 页面加载时尝试获取最新用户信息
+onMounted(async () => {
+  // 如果有token但没有用户信息，尝试加载
+  if (store.state.auth.token && !currentUser.value) {
+    await store.dispatch('auth/loadUser');
+  }
 });
 
 // 页面导航
 const navigateTo = (url: string) => {
+  // 判断是否登录，需要登录的功能页面跳转前检查
+  if (!isAuthenticated.value &&
+      (url.includes('/favorites') || url.includes('/history') || url.includes('/ratings'))) {
+    Taro.showToast({
+      title: '请先登录',
+      icon: 'none'
+    });
+
+    // 可以选择直接跳转到登录页
+    setTimeout(() => {
+      Taro.navigateTo({ url: '/pages/auth/login' });
+    }, 1500);
+    return;
+  }
+
   Taro.navigateTo({ url });
 };
 
 // 处理手机绑定
 const handleBindPhone = () => {
-  if (!userInfo.value.id) {
+  if (!isAuthenticated.value) {
     Taro.showToast({
       title: '请先登录',
       icon: 'none'
@@ -92,55 +114,20 @@ const handleBindPhone = () => {
   // 实现手机绑定逻辑
 };
 
-// 处理通知设置
-const handleNotificationSetting = () => {
-  if (!userInfo.value.id) {
-    Taro.showToast({
-      title: '请先登录',
-      icon: 'none'
-    });
-    return;
-  }
-  Taro.showToast({
-    title: '功能开发中',
-    icon: 'none'
-  });
-};
-
-// 处理隐私设置
-const handlePrivacySetting = () => {
-  if (!userInfo.value.id) {
-    Taro.showToast({
-      title: '请先登录',
-      icon: 'none'
-    });
-    return;
-  }
-  Taro.showToast({
-    title: '功能开发中',
-    icon: 'none'
-  });
-};
-
 // 处理登录/退出
 const handleLoginAction = () => {
-  if (userInfo.value.id) {
+  if (isAuthenticated.value) {
     // 退出登录
-    userInfo.value = {
-      id: '',
-      nickname: '未登录',
-      avatarUrl: '',
-      phone: ''
-    };
+    store.dispatch('auth/logout');
+
     Taro.showToast({
       title: '已退出登录',
       icon: 'success'
     });
   } else {
-    // 实现登录逻辑
-    Taro.showToast({
-      title: '登录功能开发中',
-      icon: 'none'
+    // 跳转到登录页面
+    Taro.navigateTo({
+      url: '/pages/auth/login'
     });
   }
 };

@@ -36,14 +36,14 @@ export function getMockMode(): boolean {
 }
 
 // 开发环境配置
-export const devConfig = {
-    baseUrl: 'http://dev-api.example.com',
-    mockEnabled: true
+const devConfig = {
+    baseURL: 'http://localhost:8000',  // 修改为你的后端服务地址
+    mockEnabled: false
 }
 
 // 生产环境配置
-export const prodConfig = {
-    baseUrl: 'https://api.example.com',
+const prodConfig = {
+    baseURL: 'https://api.example.com',
     mockEnabled: false
 }
 
