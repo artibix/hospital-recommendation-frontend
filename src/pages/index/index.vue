@@ -76,9 +76,36 @@ const isHospitalFavorite = (hospitalId: string) => {
 };
 
 // 获取附近医院数据
+// 获取附近医院数据
 const fetchNearbyHospitals = async () => {
   try {
-    const hospitals = await getNearbyHospitals({});
+    // 首先尝试获取用户位置
+    let lat = 27.3019; // 毕节市中心纬度（默认值）
+    let lng = 105.2877; // 毕节市中心经度（默认值）
+
+    // try {
+    //   // 尝试获取用户真实位置
+    //   const location = await Taro.getLocation({
+    //     type: 'gcj02', // 使用国测局坐标系
+    //     isHighAccuracy: true, // 开启高精度定位
+    //     highAccuracyExpireTime: 3000 // 高精度定位超时时间，单位ms
+    //   });
+    //
+    //   if (location) {
+    //     lat = location.latitude;
+    //     lng = location.longitude;
+    //   }
+    // } catch (locationError) {
+    //   console.warn('获取位置失败，使用默认位置:', locationError);
+    // }
+
+    // 使用获取到的或默认位置调用API
+    const hospitals = await getNearbyHospitals({
+      lat,
+      lng,
+      radius: 10 // 默认10公里范围
+    });
+
     // 只显示前3个医院
     nearbyHospitals.value = hospitals.slice(0, 3);
   } catch (error) {

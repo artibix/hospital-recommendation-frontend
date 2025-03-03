@@ -79,6 +79,25 @@ const goToHospitalList = () => {
 };
 
 const fetchFavorites = async () => {
+  // 检查登录状态
+  const token = Taro.getStorageSync('auth_token');
+  if (!token) {
+    Taro.showToast({
+      title: '请先登录',
+      icon: 'none',
+      duration: 2000
+    });
+
+    // 设置一个空数组以避免未登录时的错误
+    favoriteHospitals.value = [];
+
+    // 延迟跳转到登录页
+    setTimeout(() => {
+      Taro.navigateTo({ url: '/pages/auth/login' });
+    }, 1000);
+    return;
+  }
+
   try {
     favoriteHospitals.value = await getFavoriteHospitals();
   } catch (error) {
@@ -90,7 +109,6 @@ const fetchFavorites = async () => {
     });
   }
 };
-
 onMounted(() => {
   // 获取页面可用高度
   const systemInfo = Taro.getSystemInfoSync();

@@ -19,6 +19,7 @@ declare module 'vue' {
     NutInput: typeof import('@nutui/nutui-taro')['Input']
     NutRate: typeof import('@nutui/nutui-taro')['Rate']
     NutSearchbar: typeof import('@nutui/nutui-taro')['Searchbar']
+    NutSwitch: typeof import('@nutui/nutui-taro')['Switch']
     NutTabPane: typeof import('@nutui/nutui-taro')['TabPane']
     NutTabs: typeof import('@nutui/nutui-taro')['Tabs']
     SearchBar: typeof import('./src/components/base/SearchBar.vue')['default']

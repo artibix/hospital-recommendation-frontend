@@ -24,6 +24,7 @@
           <view class="content-wrap">
             <view class="bubble">
               <text>{{ message.content }}</text>
+              <text v-if="streamingMessage && message.id === 'streaming'" class="streaming-text">{{ streamingText }}</text>
             </view>
 
             <view
@@ -32,6 +33,21 @@
             >
               <hospital-card
                   v-for="hospital in message.recommendations"
+                  :key="hospital.id"
+                  :hospital="hospital"
+                  :is-favorite="isHospitalFavorite(hospital.id)"
+                  @click="handleHospitalSelect"
+                  @favorite="handleFavoriteToggle"
+              />
+            </view>
+
+            <!-- 流式推荐展示 -->
+            <view
+                v-if="message.id === 'streaming' && streamingRecommendations.length > 0"
+                class="recommendations"
+            >
+              <hospital-card
+                  v-for="hospital in streamingRecommendations"
                   :key="hospital.id"
                   :hospital="hospital"
                   :is-favorite="isHospitalFavorite(hospital.id)"
@@ -62,6 +78,11 @@
           发送
         </nut-button>
       </view>
+      <!-- 流式响应开关 -->
+      <view class="streaming-option">
+        <nut-switch v-model="useStreaming" size="small" />
+        <text class="option-text">流式响应</text>
+      </view>
     </view>
   </view>
 </template>
@@ -71,13 +92,20 @@ import {ref, onMounted, nextTick} from 'vue';
 import Taro from '@tarojs/taro';
 import {Ask2, People} from '@nutui/icons-vue-taro';
 import type {Hospital, Message} from '@/types/models';
-import {getChatHistory, sendMessage} from '@/api/assistant';
+import {getChatHistory, sendMessage, sendMessageStreaming} from '@/api/assistant';
 import HospitalCard from '@/components/hospital/HospitalCard.vue';
 
 const messages = ref<Message[]>([]);
 const inputContent = ref('');
 const sending = ref(false);
 const favoriteIds = ref<string[]>([]);
+
+// 流式响应相关
+const useStreaming = ref(false);
+const streamingMessage = ref(false);
+const streamingText = ref('');
+const streamingRecommendations = ref<Hospital[]>([]);
+const streamingMessageId = ref('streaming');
 
 const isHospitalFavorite = (id: string) => favoriteIds.value.includes(id);
 
@@ -129,6 +157,7 @@ const handleSend = async () => {
   sending.value = true;
 
   try {
+    // 创建用户消息
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
@@ -138,9 +167,15 @@ const handleSend = async () => {
     messages.value.push(userMessage);
     scrollToLatest();
 
-    const response = await sendMessage(content);
-    messages.value.push(response);
-    scrollToLatest();
+    if (useStreaming.value) {
+      // 使用流式响应
+      await handleStreamingResponse(content);
+    } else {
+      // 使用普通响应
+      const response = await sendMessage(content);
+      messages.value.push(response);
+      scrollToLatest();
+    }
   } catch (error) {
     console.error('发送失败:', error);
     Taro.showToast({
@@ -149,6 +184,80 @@ const handleSend = async () => {
     });
   } finally {
     sending.value = false;
+  }
+};
+
+// 处理流式响应
+const handleStreamingResponse = async (content: string) => {
+  // 重置流式响应状态
+  streamingMessage.value = true;
+  streamingText.value = '';
+  streamingRecommendations.value = [];
+
+  // 创建一个临时的流式消息
+  const tempMessage: Message = {
+    id: 'streaming',
+    type: 'assistant',
+    content: '',
+    timestamp: Date.now()
+  };
+  messages.value.push(tempMessage);
+  scrollToLatest();
+
+  try {
+    await sendMessageStreaming(content, {
+      onStart: (messageId) => {
+        streamingMessageId.value = messageId;
+      },
+      onText: (chunk) => {
+        streamingText.value += chunk;
+        scrollToLatest();
+      },
+      onRecommendation: (hospital) => {
+        streamingRecommendations.value.push(hospital);
+        scrollToLatest();
+      },
+      onEnd: (messageId, timestamp) => {
+        // 创建完整的消息并替换临时消息
+        const finalMessage: Message = {
+          id: messageId,
+          type: 'assistant',
+          content: streamingText.value,
+          recommendations: [...streamingRecommendations.value],
+          timestamp: timestamp
+        };
+
+        // 找到临时消息并替换
+        const index = messages.value.findIndex(m => m.id === 'streaming');
+        if (index !== -1) {
+          messages.value.splice(index, 1, finalMessage);
+        }
+
+        // 重置流式状态
+        streamingMessage.value = false;
+        streamingText.value = '';
+        streamingRecommendations.value = [];
+      },
+      onError: (error) => {
+        console.error('流式响应失败:', error);
+        Taro.showToast({
+          title: '响应失败',
+          icon: 'error'
+        });
+
+        // 移除临时消息
+        messages.value = messages.value.filter(m => m.id !== 'streaming');
+
+        // 重置流式状态
+        streamingMessage.value = false;
+        streamingText.value = '';
+        streamingRecommendations.value = [];
+      }
+    });
+  } catch (error) {
+    console.error('流式响应处理失败:', error);
+    // 移除临时消息
+    messages.value = messages.value.filter(m => m.id !== 'streaming');
   }
 };
 
@@ -167,9 +276,9 @@ onMounted(async () => {
       messages.value = history;
     }
   } catch (error) {
-    console.error('获取历史记录失败:', error);
+    console.error('获取记录失败:', error);
     Taro.showToast({
-      title: '获取历史记录失败',
+      title: '获取记录失败',
       icon: 'error'
     });
   }
@@ -235,6 +344,11 @@ onMounted(async () => {
           line-height: 1.6;
           background: #fff;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+          .streaming-text {
+            border-right: 2px solid #2B87FF;
+            animation: cursor-blink 0.7s infinite;
+          }
         }
 
         .recommendations {
@@ -303,5 +417,23 @@ onMounted(async () => {
       box-shadow: none;
     }
   }
+
+  .streaming-option {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 12px;
+
+    .option-text {
+      margin-left: 8px;
+      font-size: 24px;
+      color: #666;
+    }
+  }
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 </style>

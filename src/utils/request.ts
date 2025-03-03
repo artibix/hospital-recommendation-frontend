@@ -49,7 +49,7 @@ export class RequestError extends Error {
 // Default configuration
 const defaultConfig: RequestConfig = {
     baseURL: 'http://localhost:8000',
-    timeout: 60000,
+    timeout: 120000,
     tokenKey: 'token',
     loginPath: '/pages/auth/login'
 }
@@ -90,7 +90,33 @@ function responseInterceptor(response: Taro.request.SuccessCallbackResult<Respon
     switch (statusCode) {
         case 401:
             Taro.removeStorageSync(globalConfig.tokenKey || 'token')
-            Taro.navigateTo({ url: globalConfig.loginPath || '/pages/auth/login' })
+
+            // 添加逻辑来检查登录页面是否存在
+            const pages = Taro.getCurrentPages()
+            const currentPage = pages[pages.length - 1]
+
+            // 如果当前不在登录页，才跳转
+            if (currentPage && !currentPage.route?.includes('auth/login')) {
+                Taro.showToast({
+                    title: '请先登录',
+                    icon: 'none',
+                    duration: 1500
+                });
+
+                // 延迟跳转，给toast时间显示
+                setTimeout(() => {
+                    Taro.navigateTo({
+                        url: globalConfig.loginPath || '/pages/auth/login',
+                        fail: (err) => {
+                            console.error('导航到登录页失败:', err)
+                            // 如果跳转失败，尝试重定向到首页
+                            Taro.switchTab({
+                                url: '/pages/index/index'
+                            })
+                        }
+                    })
+                }, 1500);
+            }
             throw new RequestError('Unauthorized access', 401, data)
         case 403:
             throw new RequestError('Access forbidden', 403, data)
