@@ -12,6 +12,10 @@
         scroll-y
         class="favorites-list"
         :style="{ height: scrollHeight + 'px' }"
+        @scrolltolower="loadMore"
+        :refresher-enabled="true"
+        :refresher-triggered="refreshing"
+        @refresherrefresh="onRefresh"
     >
       <template v-if="favoriteHospitals.length > 0">
         <hospital-card
@@ -36,19 +40,29 @@
           </nut-button>
         </view>
       </template>
+
+      <!-- 加载状态 -->
+      <view class="loading-state" v-if="loading && favoriteHospitals.length > 0">
+        <nut-icon name="loading" size="24" color="#2B87FF" />
+        <text>加载中...</text>
+      </view>
     </scroll-view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import {onMounted, ref} from 'vue';
+import { onMounted, ref } from 'vue';
 import Taro from '@tarojs/taro';
-import {getFavoriteHospitals} from '@/api/hospital';
-import type {Hospital} from '@/api/types';
+import { getFavoriteHospitals, removeFavorite } from '@/api/favorite';
+import type { Hospital } from '@/api/types';
 import HospitalCard from '@/components/hospital/HospitalCard.vue';
+import { useStore } from 'vuex';
 
 const favoriteHospitals = ref<Hospital[]>([]);
 const scrollHeight = ref(0);
+const loading = ref(false);
+const refreshing = ref(false);
+const store = useStore();
 
 const handleHospitalSelect = (hospital: Hospital) => {
   Taro.navigateTo({
@@ -56,32 +70,56 @@ const handleHospitalSelect = (hospital: Hospital) => {
   });
 };
 
-const handleFavoriteToggle = async (hospital: Hospital) => {
-  // 从收藏列表中移除
-  const index = favoriteHospitals.value.findIndex(h => h.id === hospital.id);
-  if (index > -1) {
-    favoriteHospitals.value.splice(index, 1);
-    Taro.showToast({
-      title: '已取消收藏',
-      icon: 'success',
-      duration: 2000
-    });
+const handleFavoriteToggle = async (event: { hospital: Hospital, isFavorite: boolean }) => {
+  const { hospital, isFavorite } = event;
+
+  // 如果是取消收藏
+  if (!isFavorite) {
+    try {
+      await removeFavorite(hospital.id);
+      // 从列表中移除
+      favoriteHospitals.value = favoriteHospitals.value.filter(h => h.id !== hospital.id);
+
+      Taro.showToast({
+        title: '已取消收藏',
+        icon: 'success',
+        duration: 2000
+      });
+    } catch (error) {
+      console.error('取消收藏失败:', error);
+      Taro.showToast({
+        title: '操作失败，请重试',
+        icon: 'error',
+        duration: 2000
+      });
+    }
   }
 };
 
 const handleNavigate = (hospital: Hospital) => {
-  console.log('导航至医院:', hospital);
-  // 处理导航逻辑
+  if (!hospital.latitude || !hospital.longitude) {
+    Taro.showToast({
+      title: '无法获取医院位置信息',
+      icon: 'none'
+    });
+    return;
+  }
+
+  Taro.openLocation({
+    latitude: hospital.latitude,
+    longitude: hospital.longitude,
+    name: hospital.name,
+    address: hospital.address
+  });
 };
 
 const goToHospitalList = () => {
   Taro.navigateTo({ url: '/pages/hospital/list' });
 };
 
-const fetchFavorites = async () => {
+const fetchFavorites = async (showLoading = true) => {
   // 检查登录状态
-  const token = Taro.getStorageSync('auth_token');
-  if (!token) {
+  if (!store.state.auth.isAuthenticated) {
     Taro.showToast({
       title: '请先登录',
       icon: 'none',
@@ -98,6 +136,10 @@ const fetchFavorites = async () => {
     return;
   }
 
+  if (showLoading) {
+    loading.value = true;
+  }
+
   try {
     favoriteHospitals.value = await getFavoriteHospitals();
   } catch (error) {
@@ -107,14 +149,35 @@ const fetchFavorites = async () => {
       icon: 'error',
       duration: 2000
     });
+  } finally {
+    loading.value = false;
+    refreshing.value = false;
   }
 };
+
+// 下拉刷新
+const onRefresh = () => {
+  refreshing.value = true;
+  fetchFavorites(false);
+};
+
+// 上拉加载更多
+const loadMore = () => {
+  // 这里可以实现分页加载，目前简单实现
+  console.log('加载更多收藏医院');
+};
+
 onMounted(() => {
   // 获取页面可用高度
   const systemInfo = Taro.getSystemInfoSync();
   // 减去顶部标题区域的高度
   scrollHeight.value = systemInfo.windowHeight - 100;
 
+  fetchFavorites();
+});
+
+// 页面显示时刷新数据
+Taro.useDidShow(() => {
   fetchFavorites();
 });
 </script>
@@ -161,6 +224,16 @@ onMounted(() => {
         font-size: 28px;
       }
     }
+
+    .loading-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 0;
+      gap: 8px;
+      color: #666;
+      font-size: 24px;
+    }
   }
 }
 
@@ -178,6 +251,12 @@ onMounted(() => {
       }
 
       .subtitle {
+        color: #999;
+      }
+    }
+
+    .favorites-list {
+      .loading-state {
         color: #999;
       }
     }

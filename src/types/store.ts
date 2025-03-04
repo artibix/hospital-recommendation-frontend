@@ -24,6 +24,8 @@ export interface HospitalState {
     hospitals: Hospital[]
     currentHospital: Hospital | null
     currentDepartments: Department[]
+    favoriteHospitals: Hospital[]
+    currentHospitalRatings: Rating[]
     loading: boolean
     page: number
     hasMore: boolean
@@ -34,6 +36,34 @@ export interface HospitalState {
         distance?: number
         rating?: number
     }
+}
+
+// Updated HospitalMutationTypes
+export type HospitalMutationTypes = {
+    SET_HOSPITALS: 'SET_HOSPITALS'
+    APPEND_HOSPITALS: 'APPEND_HOSPITALS'
+    SET_CURRENT_HOSPITAL: 'SET_CURRENT_HOSPITAL'
+    SET_DEPARTMENTS: 'SET_DEPARTMENTS'
+    SET_FAVORITE_HOSPITALS: 'SET_FAVORITE_HOSPITALS'
+    SET_CURRENT_HOSPITAL_RATINGS: 'SET_CURRENT_HOSPITAL_RATINGS'
+    ADD_FAVORITE: 'ADD_FAVORITE'
+    REMOVE_FAVORITE: 'REMOVE_FAVORITE'
+    SET_LOADING: 'SET_LOADING'
+    SET_PAGE: 'SET_PAGE'
+    SET_HAS_MORE: 'SET_HAS_MORE'
+    SET_SEARCH_QUERY: 'SET_SEARCH_QUERY'
+    SET_FILTERS: 'SET_FILTERS'
+    SET_ERROR: 'SET_ERROR'
+}
+
+// Updated HospitalGetters
+export interface HospitalGetters {
+    filteredHospitals: Hospital[]
+    isLoading: boolean
+    hasMore: boolean
+    currentHospital: Hospital | null
+    favoriteHospitals: Hospital[]
+    currentHospitalRatings: Rating[]
 }
 
 // 应用全局状态

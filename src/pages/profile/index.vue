@@ -24,11 +24,11 @@
         </template>
       </nut-cell>
 
-      <nut-cell title="就医记录" is-link @click="navigateTo('/pages/hospital/history')">
-        <template #icon>
-          <Date class="cell-icon history" />
-        </template>
-      </nut-cell>
+<!--      <nut-cell title="就医记录" is-link @click="navigateTo('/pages/hospital/history')">-->
+<!--        <template #icon>-->
+<!--          <Date class="cell-icon history" />-->
+<!--        </template>-->
+<!--      </nut-cell>-->
 
       <nut-cell title="我的评价" is-link @click="navigateTo('/pages/hospital/ratings')">
         <template #icon>

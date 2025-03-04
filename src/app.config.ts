@@ -6,6 +6,7 @@ export default ({
     'pages/hospital/list',
     'pages/hospital/favorites',
     'pages/hospital/detail',
+    'pages/hospital/ratings',
     'pages/profile/index',
     'pages/auth/login',
   ],

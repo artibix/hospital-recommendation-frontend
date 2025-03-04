@@ -4,9 +4,10 @@ import { HospitalState, RootState } from '@/types/store'
 import {
     searchHospitals,
     getHospitalDetail,
-    getFavoriteHospitals,
     getNearbyHospitals
 } from '@/api/hospital'
+import { getFavoriteHospitals, addFavorite, removeFavorite } from '@/api/favorite'
+import { getHospitalRatings, submitHospitalRating } from '@/api/rating'
 
 export const hospital: Module<HospitalState, RootState> = {
     namespaced: true,
@@ -15,6 +16,8 @@ export const hospital: Module<HospitalState, RootState> = {
         hospitals: [],
         currentHospital: null,
         currentDepartments: [],
+        favoriteHospitals: [],
+        currentHospitalRatings: [],
         loading: false,
         page: 1,
         hasMore: true,
@@ -38,6 +41,24 @@ export const hospital: Module<HospitalState, RootState> = {
 
         SET_DEPARTMENTS(state, departments) {
             state.currentDepartments = departments
+        },
+
+        SET_FAVORITE_HOSPITALS(state, hospitals) {
+            state.favoriteHospitals = hospitals
+        },
+
+        SET_CURRENT_HOSPITAL_RATINGS(state, ratings) {
+            state.currentHospitalRatings = ratings
+        },
+
+        ADD_FAVORITE(state, hospital) {
+            if (!state.favoriteHospitals.some(h => h.id === hospital.id)) {
+                state.favoriteHospitals.push(hospital)
+            }
+        },
+
+        REMOVE_FAVORITE(state, hospitalId) {
+            state.favoriteHospitals = state.favoriteHospitals.filter(h => h.id !== hospitalId)
         },
 
         SET_LOADING(state, loading) {
@@ -121,11 +142,78 @@ export const hospital: Module<HospitalState, RootState> = {
             commit('SET_LOADING', true)
             try {
                 const hospitals = await getFavoriteHospitals()
-                commit('SET_HOSPITALS', hospitals)
+                commit('SET_FAVORITE_HOSPITALS', hospitals)
+                return hospitals
             } catch (error) {
                 commit('SET_ERROR', error.message)
+                return []
             } finally {
                 commit('SET_LOADING', false)
+            }
+        },
+
+        // 添加收藏
+        async addFavorite({ commit, state }, hospitalId) {
+            try {
+                await addFavorite(hospitalId)
+
+                // 如果当前医院已加载，将其添加到收藏列表
+                if (state.currentHospital && state.currentHospital.id === hospitalId) {
+                    commit('ADD_FAVORITE', state.currentHospital)
+                } else {
+                    // 否则查找医院列表
+                    const hospital = state.hospitals.find(h => h.id === hospitalId)
+                    if (hospital) {
+                        commit('ADD_FAVORITE', hospital)
+                    }
+                }
+
+                return true
+            } catch (error) {
+                commit('SET_ERROR', error.message)
+                return false
+            }
+        },
+
+        // 取消收藏
+        async removeFavorite({ commit }, hospitalId) {
+            try {
+                await removeFavorite(hospitalId)
+                commit('REMOVE_FAVORITE', hospitalId)
+                return true
+            } catch (error) {
+                commit('SET_ERROR', error.message)
+                return false
+            }
+        },
+
+        // 获取医院评分
+        async getHospitalRatings({ commit }, hospitalId) {
+            commit('SET_LOADING', true)
+            try {
+                const ratings = await getHospitalRatings(hospitalId)
+                commit('SET_CURRENT_HOSPITAL_RATINGS', ratings)
+                return ratings
+            } catch (error) {
+                commit('SET_ERROR', error.message)
+                return []
+            } finally {
+                commit('SET_LOADING', false)
+            }
+        },
+
+        // 提交医院评分
+        async submitHospitalRating({ commit, dispatch }, { hospitalId, data }) {
+            try {
+                const result = await submitHospitalRating(hospitalId, data)
+                // 刷新评分列表
+                await dispatch('getHospitalRatings', hospitalId)
+                // 刷新医院详情以更新总评分
+                await dispatch('getHospitalDetail', hospitalId)
+                return result
+            } catch (error) {
+                commit('SET_ERROR', error.message)
+                throw error
             }
         },
 
@@ -163,6 +251,8 @@ export const hospital: Module<HospitalState, RootState> = {
 
         isLoading: state => state.loading,
         hasMore: state => state.hasMore,
-        currentHospital: state => state.currentHospital
+        currentHospital: state => state.currentHospital,
+        favoriteHospitals: state => state.favoriteHospitals,
+        currentHospitalRatings: state => state.currentHospitalRatings
     }
 }

@@ -66,6 +66,19 @@
 
     <!-- 内容区域 -->
     <nut-tabs v-model="activeTab" title-scroll>
+      <!-- 评价信息 -->
+      <nut-tab-pane title="评价" pane-key="ratings">
+        <scroll-view
+            scroll-y
+            class="ratings-container"
+            :style="{ height: scrollHeight + 'px' }"
+        >
+          <ratings-list
+              :hospital-id="hospitalId"
+              @update="updateHospitalRating"
+          />
+        </scroll-view>
+      </nut-tab-pane>
       <!-- 科室信息 -->
       <nut-tab-pane title="科室信息" pane-key="departments">
         <scroll-view
@@ -101,33 +114,71 @@
           </view>
         </scroll-view>
       </nut-tab-pane>
+
     </nut-tabs>
   </view>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import Taro, { useRouter } from '@tarojs/taro';
 import { Location, Heart } from '@nutui/icons-vue-taro';
-import type {Hospital} from '@/api/types';
-import {getHospitalDepartments, getHospitalDetail} from "@/api/hospital";
-import {Department} from "@/types/models";
+import type { Hospital } from '@/api/types';
+import { getHospitalDepartments, getHospitalDetail } from "@/api/hospital";
+import { checkIsFavorite, toggleFavorite } from "@/api/favorite";
+import { Department } from "@/types/models";
+import RatingsList from '@/components/hospital/RatingsList.vue';
+import { useStore } from 'vuex';
+
 // 状态定义
 const router = useRouter();
+const store = useStore();
 const hospital = ref<Hospital>({} as Hospital);
 const departments = ref<Department[]>([]);
-const activeTab = ref('departments');
+const activeTab = ref('ratings');
 const scrollHeight = ref(0);
 const isFavorite = ref(false);
+const hospitalId = ref('');
+
+// 检查用户是否已登录
+const isAuthenticated = computed(() => {
+  return store.state.auth?.isAuthenticated || false;
+});
 
 // 处理收藏
-const handleFavorite = () => {
-  isFavorite.value = !isFavorite.value;
-  Taro.showToast({
-    title: isFavorite.value ? '已收藏' : '已取消收藏',
-    icon: 'success',
-    duration: 2000
-  });
+const handleFavorite = async () => {
+  // 检查登录状态
+  if (!isAuthenticated.value) {
+    Taro.showToast({
+      title: '请先登录',
+      icon: 'none',
+      duration: 2000
+    });
+
+    setTimeout(() => {
+      Taro.navigateTo({ url: '/pages/auth/login' });
+    }, 1500);
+
+    return;
+  }
+
+  try {
+    // 调用切换收藏API
+    isFavorite.value = await toggleFavorite(hospitalId.value);
+
+    Taro.showToast({
+      title: isFavorite.value ? '已收藏' : '已取消收藏',
+      icon: 'success',
+      duration: 2000
+    });
+  } catch (error) {
+    console.error('操作收藏失败:', error);
+    Taro.showToast({
+      title: '操作失败，请重试',
+      icon: 'error',
+      duration: 2000
+    });
+  }
 };
 
 // 处理导航
@@ -150,20 +201,48 @@ const handleNavigate = () => {
 
 // 获取医院详情
 const fetchHospitalDetail = async (id: string): Promise<Hospital> => {
-  const hospitalDetail  = await getHospitalDetail(id);
-  if (!hospitalDetail ) {
+  const hospitalDetail = await getHospitalDetail(id);
+  if (!hospitalDetail) {
     throw new Error(`Hospital with ID ${id} not found`);
   }
   departments.value = await getHospitalDepartments(id);
 
   hospital.value = hospitalDetail;
+  return hospitalDetail;
+};
+
+// 检查收藏状态
+const checkFavoriteStatus = async (id: string) => {
+  if (isAuthenticated.value) {
+    try {
+      isFavorite.value = await checkIsFavorite(id);
+    } catch (error) {
+      console.error('获取收藏状态失败:', error);
+    }
+  }
+};
+
+// 更新医院评分
+const updateHospitalRating = async () => {
+  if (hospitalId.value) {
+    try {
+      const updatedHospital = await getHospitalDetail(hospitalId.value);
+      if (updatedHospital) {
+        hospital.value = updatedHospital;
+      }
+    } catch (error) {
+      console.error('更新医院评分失败:', error);
+    }
+  }
 };
 
 onMounted(async () => {
   // 获取页面参数
   const { id } = router.params;
   if (id) {
+    hospitalId.value = id;
     await fetchHospitalDetail(id);
+    await checkFavoriteStatus(id);
   }
 
   // 计算滚动区域高度
@@ -328,6 +407,10 @@ onMounted(async () => {
         line-height: 1.6;
       }
     }
+  }
+
+  .ratings-container {
+    padding: 16px;
   }
 }
 

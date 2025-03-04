@@ -1,4 +1,3 @@
-// src/components/hospital/HospitalCard.vue
 <template>
   <view class="hospital-card" @click="onCardClick">
     <view class="hospital-info">
@@ -44,7 +43,7 @@
         <view class="rating-info">
           <nut-rate
               v-if="hospital.rating"
-              v-model="hospital.rating"
+              :model-value="hospital.rating"
               readonly
               :size="16"
               active-color="#FFB800"
@@ -61,8 +60,8 @@
         <!-- 操作按钮区 -->
         <view class="actions">
           <view class="action-button favorite" @click.stop="handleFavorite">
-            <Star :fill="isFavorite" class="action-icon" />
-            <text class="action-text">{{ isFavorite ? '已收藏' : '收藏' }}</text>
+            <Star :fill="localIsFavorite" class="action-icon" />
+            <text class="action-text">{{ localIsFavorite ? '已收藏' : '收藏' }}</text>
           </view>
           <view class="action-button navigate" @click.stop="handleNavigate">
             <Location class="action-icon" />
@@ -75,10 +74,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineProps, defineEmits } from 'vue';
+// Updated script section for HospitalCard.vue
+import { computed, defineProps, defineEmits, ref, onMounted } from 'vue';
 import { Hospital } from '@/api/types';
 import Taro from '@tarojs/taro';
 import { Location, Star } from '@nutui/icons-vue-taro';
+import { toggleFavorite, checkIsFavorite } from '@/api/favorite';
+import { useStore } from 'vuex';
 
 const props = defineProps({
   hospital: {
@@ -92,10 +94,40 @@ const props = defineProps({
   showDepartmentsPreview: {
     type: Boolean,
     default: true
+  },
+  // 新增属性：是否检查收藏状态
+  checkFavoriteStatus: {
+    type: Boolean,
+    default: false
   }
 });
 
 const emit = defineEmits(['click', 'favorite', 'navigate']);
+const store = useStore();
+const localIsFavorite = ref(props.isFavorite);
+
+// 检查用户是否已登录
+const isAuthenticated = computed(() => {
+  return store.state.auth?.isAuthenticated || false;
+});
+
+// 检查收藏状态
+const checkFavoriteStatus = async () => {
+  if (props.checkFavoriteStatus && isAuthenticated.value) {
+    try {
+      const status = await checkIsFavorite(props.hospital.id);
+      localIsFavorite.value = status;
+    } catch (error) {
+      console.error('获取收藏状态失败:', error);
+    }
+  }
+};
+
+onMounted(() => {
+  if (props.checkFavoriteStatus) {
+    checkFavoriteStatus();
+  }
+});
 
 const onCardClick = () => {
   emit('click', props.hospital);
@@ -104,13 +136,46 @@ const onCardClick = () => {
   });
 };
 
-const handleFavorite = () => {
-  emit('favorite', props.hospital);
-  Taro.showToast({
-    title: props.isFavorite ? '已取消收藏' : '已添加收藏',
-    icon: 'success',
-    duration: 2000
-  });
+const handleFavorite = async () => {
+  // 检查登录状态
+  if (!isAuthenticated.value) {
+    Taro.showToast({
+      title: '请先登录',
+      icon: 'none',
+      duration: 2000
+    });
+
+    setTimeout(() => {
+      Taro.navigateTo({ url: '/pages/auth/login' });
+    }, 1500);
+
+    return;
+  }
+
+  try {
+    // 调用切换收藏API
+    const result = await toggleFavorite(props.hospital.id);
+    localIsFavorite.value = result;
+
+    // 通知父组件
+    emit('favorite', {
+      hospital: props.hospital,
+      isFavorite: localIsFavorite.value
+    });
+
+    Taro.showToast({
+      title: localIsFavorite.value ? '已添加收藏' : '已取消收藏',
+      icon: 'success',
+      duration: 2000
+    });
+  } catch (error) {
+    console.error('操作收藏失败:', error);
+    Taro.showToast({
+      title: '操作失败，请重试',
+      icon: 'error',
+      duration: 2000
+    });
+  }
 };
 
 const handleNavigate = () => {

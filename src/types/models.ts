@@ -35,13 +35,15 @@ export interface Department {
 
 export interface Rating {
     id: string
-    hospitalId: string
+    hospital_id: string
     userId: string
-    medicalQuality: number
+    medical_quality: number
     service: number
     environment: number
+    efficiency: number
+    equipment: number
     comment?: string
-    createdAt: string
+    created_at: string
 }
 
 export interface UserFavorite {

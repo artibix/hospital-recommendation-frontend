@@ -37,7 +37,8 @@
             v-for="hospital in nearbyHospitals"
             :key="hospital.id"
             :hospital="hospital"
-            :is-favorite="isHospitalFavorite(hospital.id)"
+            :check-favorite-status="true"
+            @favorite="handleFavoriteChange"
         />
 
         <view v-if="nearbyHospitals.length > 3" class="view-more" @click="goToHospitalList">
@@ -50,17 +51,23 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
+//src/pages/index/index.vue - Updated Script Section with fixed handleFavoriteChange
+import { ref, onMounted, computed } from 'vue';
 import { Category, Heart } from '@nutui/icons-vue-taro';
 import { getNearbyHospitals } from '@/api/hospital';
 import Taro from '@tarojs/taro';
 import SearchBar from '@/components/base/SearchBar.vue';
 import HospitalCard from '@/components/hospital/HospitalCard.vue';
-import {Hospital} from "@/types/models";
+import { Hospital } from "@/types/models";
+import { useStore } from 'vuex';
+import { checkIsFavorite, toggleFavorite } from '@/api/favorite';
 
 // 状态定义
 const nearbyHospitals = ref<Hospital[]>([]);
-const favoriteIds = ref<string[]>(['1', '3']); // 示例收藏ID
+const store = useStore();
+
+// 计算属性：是否已认证
+const isAuthenticated = computed(() => store.state.auth.isAuthenticated);
 
 // 页面跳转函数
 const goToHospitalList = () => {
@@ -68,14 +75,66 @@ const goToHospitalList = () => {
 };
 
 const goToFavorites = () => {
+  if (!isAuthenticated.value) {
+    Taro.showToast({
+      title: '请先登录',
+      icon: 'none',
+      duration: 2000
+    });
+
+    setTimeout(() => {
+      Taro.navigateTo({ url: '/pages/auth/login' });
+    }, 1500);
+
+    return;
+  }
+
   Taro.navigateTo({ url: '/pages/hospital/favorites' });
 };
 
-const isHospitalFavorite = (hospitalId: string) => {
-  return favoriteIds.value.includes(hospitalId);
+// 处理收藏状态变化
+const handleFavoriteChange = async (event: { hospital: Hospital, isFavorite: boolean }) => {
+  const { hospital, isFavorite } = event;
+
+  // 检查用户是否已登录
+  if (!isAuthenticated.value) {
+    Taro.showToast({
+      title: '请先登录',
+      icon: 'none',
+      duration: 2000
+    });
+
+    setTimeout(() => {
+      Taro.navigateTo({ url: '/pages/auth/login' });
+    }, 1500);
+
+    return;
+  }
+
+  try {
+    // 根据当前状态调用相应的action
+    if (isFavorite) {
+      await store.dispatch('hospital/addFavorite', hospital.id);
+    } else {
+      await store.dispatch('hospital/removeFavorite', hospital.id);
+    }
+
+    // 显示操作结果
+    Taro.showToast({
+      title: isFavorite ? '已添加收藏' : '已取消收藏',
+      icon: 'success',
+      duration: 2000
+    });
+  } catch (error) {
+    console.error('操作收藏失败:', error);
+    Taro.showToast({
+      title: '操作失败，请重试',
+      icon: 'error',
+      duration: 2000
+    });
+  }
 };
 
-// 获取附近医院数据
 // 获取附近医院数据
 const fetchNearbyHospitals = async () => {
   try {
@@ -120,6 +179,12 @@ const fetchNearbyHospitals = async () => {
 
 // 初始化
 onMounted(() => {
+  fetchNearbyHospitals();
+});
+
+// 页面显示时刷新数据
+Taro.useDidShow(() => {
+  // 当页面重新显示时，刷新附近医院数据
   fetchNearbyHospitals();
 });
 </script>
