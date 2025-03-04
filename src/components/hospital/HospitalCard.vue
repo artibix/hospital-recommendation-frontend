@@ -17,6 +17,28 @@
         >{{ tag }}</text>
       </view>
 
+      <!-- 推荐理由 (仅在推荐场景中显示) -->
+      <view class="match-reason" v-if="hospital.match_reason">
+        <view class="match-label">
+          <text class="match-score" v-if="hospital.match_score">匹配度 {{ (hospital.match_score * 100).toFixed(0) }}%</text>
+          <text class="recommendation-label">推荐理由:</text>
+        </view>
+        <text class="reason-text">{{ hospital.match_reason }}</text>
+      </view>
+
+      <!-- 科室信息 (在推荐场景中显示) -->
+      <view class="departments-preview" v-if="hospital.departments && hospital.departments.length > 0 && showDepartmentsPreview">
+        <text class="dept-label">相关科室: </text>
+        <view class="dept-tags">
+          <text
+              v-for="(dept, index) in hospital.departments.slice(0, 3)"
+              :key="index"
+              class="dept-tag"
+          >{{ dept }}</text>
+          <text v-if="hospital.departments.length > 3" class="more-dept">等{{ hospital.departments.length }}个科室</text>
+        </view>
+      </view>
+
       <!-- 评分和距离信息 -->
       <view class="hospital-details">
         <view class="rating-info">
@@ -53,19 +75,27 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, defineProps, defineEmits } from 'vue';
 import { Hospital } from '@/api/types';
 import Taro from '@tarojs/taro';
 import { Location, Star } from '@nutui/icons-vue-taro';
 
-const props = defineProps<{
-  hospital: Hospital;
-  isFavorite?: boolean;
-}>();
+const props = defineProps({
+  hospital: {
+    type: Object as () => Hospital,
+    required: true
+  },
+  isFavorite: {
+    type: Boolean,
+    default: false
+  },
+  showDepartmentsPreview: {
+    type: Boolean,
+    default: true
+  }
+});
 
 const emit = defineEmits(['click', 'favorite', 'navigate']);
-
-const isFavorite = computed(() => props.isFavorite || false);
 
 const onCardClick = () => {
   emit('click', props.hospital);
@@ -77,7 +107,7 @@ const onCardClick = () => {
 const handleFavorite = () => {
   emit('favorite', props.hospital);
   Taro.showToast({
-    title: isFavorite.value ? '已取消收藏' : '已添加收藏',
+    title: props.isFavorite ? '已取消收藏' : '已添加收藏',
     icon: 'success',
     duration: 2000
   });
@@ -153,6 +183,68 @@ const handleNavigate = () => {
         padding: 4px 12px;
         background: #f5f5f5;
         border-radius: 6px;
+      }
+    }
+
+    .match-reason {
+      background: rgba(43, 135, 255, 0.05);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+
+      .match-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+
+        .match-score {
+          font-size: 24px;
+          color: #2B87FF;
+          font-weight: 500;
+        }
+
+        .recommendation-label {
+          font-size: 24px;
+          color: #666;
+          font-weight: 500;
+        }
+      }
+
+      .reason-text {
+        font-size: 24px;
+        color: #333;
+        line-height: 1.5;
+      }
+    }
+
+    .departments-preview {
+      margin-bottom: 16px;
+
+      .dept-label {
+        font-size: 24px;
+        color: #666;
+        margin-bottom: 8px;
+        display: block;
+      }
+
+      .dept-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+
+        .dept-tag {
+          font-size: 22px;
+          color: #2B87FF;
+          padding: 4px 12px;
+          background: rgba(43, 135, 255, 0.1);
+          border-radius: 6px;
+        }
+
+        .more-dept {
+          font-size: 22px;
+          color: #999;
+        }
       }
     }
 
@@ -254,6 +346,20 @@ const handleNavigate = () => {
       .hospital-tags {
         .tag {
           background: #333;
+          color: #999;
+        }
+      }
+
+      .match-reason {
+        background: rgba(43, 135, 255, 0.1);
+
+        .reason-text {
+          color: #ccc;
+        }
+      }
+
+      .departments-preview {
+        .dept-label {
           color: #999;
         }
       }
